@@ -962,10 +962,18 @@ function boardSetup(){const save=()=>{settings.board=bset;saveSettings()};
   whatF,cnt,tbox,
   h('div',{class:'field'},h('span',{class:'lbl'},'Что разбираем',seg(BMODES.map(m=>[m[0],m[1]]),bset.mode,v=>{bset.mode=v;save()}))),
   h('div',{class:'actions'},h('button',{class:'btn green',onclick:()=>go(boardScreen)},'Вывести на доску')))),'Этап 7. Доска');paint();whatF.style.display=bset.src==='type'?'none':''}
+/* доска: смешанный набор слов разного строения (не одна тема уровня) */
+function boardMix(n,own,bank){const g=settings.grade||3,l=settings.level||1;
+ let pool=bank?BANK.filter(w=>w.g<=g&&(l===1?w.l<=2:l===2?true:w.l>=2)):[];if(own)pool=pool.concat(ownWords());
+ const key=w=>(w.hasP?'P':'')+(w.hasS?'S':'')+(w.zero?'0':w.none?'x':'e'),grp={};
+ shuffle(pool).forEach(w=>(grp[key(w)]=grp[key(w)]||[]).push(w));
+ const keys=shuffle(Object.keys(grp)),out=[],seen=new Set;
+ for(let k=0;out.length<n&&keys.some(x=>grp[x].length);k++){const a=grp[keys[k%keys.length]],w=a.shift();if(w&&!seen.has(w.word)){seen.add(w.word);out.push(w)}}
+ return shuffle(out)}
 function boardGroups(){const D=dict(),g=settings.grade,src=bset.src;
  if(src==='type')return bset.text.split('\n').map(l=>l.split(/[,;\s]+/).map(x=>x.trim().toLowerCase().replace(/ё/g,'ё')).filter(x=>/^[а-яё]+$/.test(x)).map(x=>D[x]||autoParse(x))).filter(a=>a.length);
  const own=src!=='bank',bank=src!=='mine';
- if(bset.what==='words'){const keep=settings.source;settings.source=src;const l=wordsFor(()=>1,bset.n);settings.source=keep;return[l]}
+ if(bset.what==='words')return[boardMix(bset.n,own,bank)];
  let groups=[];
  if(bset.what==='forms'){if(own)groups.push(...shuffle(ownGroups(baseOf)));if(bank)groups.push(...tierRows(FORM_ROWS).map(r=>r[1].map(rowWord)))}
  else{if(own)groups.push(...shuffle(ownGroups(w=>w.root)));if(bank){const byRoot={};BANK.filter(w=>w.g<=g).forEach(w=>(byRoot[w.root]=byRoot[w.root]||[]).push(w));groups.push(...shuffle([...tierRows(SUF_ROWS),...tierRows(PRE_ROWS)].map(r=>r[1].map(rowWord)).concat(Object.values(byRoot).filter(a=>a.length>=3).map(a=>shuffle(a).slice(0,5)))))}}
